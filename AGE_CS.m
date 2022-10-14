@@ -1,20 +1,71 @@
 function [acc,acc_ite,obj] = AGE_CS(Xs,Ys,Xt,Yt,options)
+%% Implementation of AGE_CS
+%%% Authors                      Teng et al.
+%%% Title                        2022-Adaptive Graph Embedding with Consistency and Specificity for Domain Adaptation
+%% intput
+%%% Xs                           The source samples with m * ns
+%%% Ys                           The labels of source samples with ns * 1
+%%% Xt                           The target samples with m * nt
+%%% Yt                           The labels of source samples with nt * 1
+%% options
+%%% T                    -       The iterations
+%%% dim                  -       The dimensions
+%%% k                    -       The number of KNN
+%%% aug                  -       The smooth parameter w.r.t graph S
+%%% M_mu                 -       The weight between marginal and conditional distributions
+%%% alpha                -       The weight of Laplace matrix (manifold
+%%%                              regularization) w.r.t L
+%%% lambda               -       The weight of regularization for projection matrix
+%%% tau                  -       The weight to emphasize the semantic information
+%%%
+%%% init                 -       Initialize the `Ytpseudo` or not
+%%%                              1  -  Ytpseudo is assigned before training.
+%%%                              0  -  Ytpseudo is assigned as `[]` before
+%%%                                    training
+%%%
+%%% classify             -       Determine which classifier used
+%%%
+%%%                              1  -  SRM
+%%%
+%%%                              0  -  1NN
+%%%
+%%% gamma                -       The hyperparameter of SRM classifier w.r.t
+%%%                              kernel width (default 0.1)
+%%%
+%%% Kernel               -       The hyperparameter of SRM classifier w.r.t
+%%%                              kernel projection (e.g. rbf)
+%%%
+%%% mu                   -       The hyperparameter of SRM classifier w.r.t
+%%%                              regularization term (default 0.1)
+%%%
+%% output
+%%% acc                      	 The accuracy                  (number)
+%%% acc_ite                      The accuracies of iterations  (list)
+%%% obj                          The objective function values (list)
+%% === Version ===
+%%%     Upload                   2022-05-12
+%%%     Add notes                2022-06-14
     %% set parameters if NULL
-    options=defaultOptions(options,'T',10,...
-        'dim',100,...
-        'aug',0.1,...
-        'lambda',0.1,...
-        'k',10,...
-        'M_mu',0.1,...
-        'tau',1e-3);
+    options=defaultOptions(options,...
+        'T',10,...              % The iterations
+        'dim',100,...           % The dimensions
+        'aug',0.1,...           % The smooth parameter w.r.t graph S
+        'init',1,...            % Initialize the `Ytpseudo` or not
+        'classify',2,...        % Determine which classifier used
+        'Kernel',2,...          % The hyperparameter of SRM classifier w.r.t kernel projection (e.g. rbf)
+        'alpha',0.1,...         % The weight of Laplace matrix (manifold regularization) w.r.t L
+        'lambda',0.1,...        % The weight of regularization for projection matrix
+        'k',10,...              % The number of KNN
+        'M_mu',0.1,...          % The weight between marginal and conditional distributions
+        'tau',1e-3);            % The weight to emphasize the semantic information
     %% init parameters
-    dim=options.dim;% dimension
-    aug=options.aug; % smooth parameter
-    lambda=options.lambda; % the weight of regularization for projection matrix
-    k=options.k;% neighborhood number
-    mu=options.M_mu;% the weight between marginal and conditional distributions
-    alpha=options.alpha; % the weight of Laplace matrix (manifold regularization)
-    tau=options.tau; % the weight to emphasize the semantic information
+    dim=options.dim;                % Dimension
+    aug=options.aug;                % Smooth parameter
+    lambda=options.lambda;          % The weight of regularization for projection matrix
+    k=options.k;                    % Neighborhood number
+    mu=options.M_mu;                % The weight between marginal and conditional distributions
+    alpha=options.alpha;            % The weight of Laplace matrix (manifold regularization)
+    tau=options.tau;                % The weight to emphasize the semantic information
     % -------------------------------
     Xs=normr(Xs')';
     Xt=normr(Xt')';
@@ -139,8 +190,8 @@ function [acc,acc_ite,obj] = AGE_CS(Xs,Ys,Xt,Yt,options)
         end
         %% print the results
         fprintf('[%2d] acc:%.4f\n',i,acc*100);
-%         %% calculate the objective function
-%         obj(i)=trace(A'*left*A);
+        %% calculate the objective function
+        obj(i)=trace(A'*left*A);
     end
 end
 function [L] = computeL_byW(W)
